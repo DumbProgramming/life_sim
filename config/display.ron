@@ -1,0 +1,5 @@
+  
+(
+  title: "Life Simulation",
+  dimensions: Some((1800, 1000)),
+)
