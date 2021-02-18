@@ -12,6 +12,9 @@ use amethyst::{
 };
 
 mod lifesim;
+mod systems;
+mod components;
+mod resources;
 
 fn main() -> amethyst::Result<()> {
     amethyst::start_logger(Default::default());
@@ -36,7 +39,9 @@ fn main() -> amethyst::Result<()> {
                 )
                 .with_plugin(RenderUi::default())
                 .with_plugin(RenderFlat2D::default()),
-        )?;
+        )?
+        .with(systems::SpawnerSystem { interval_count: 0, }, "spawner", &[])
+        .with(systems::MoverSystem, "mover_system", &[]);
 
     let mut game = Application::new(resources, lifesim::LifeSim, game_data)?;
     game.run();

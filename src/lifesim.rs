@@ -2,20 +2,19 @@ use amethyst::{
     core::transform::Transform,
     input::{get_key, is_close_requested, is_key_down, VirtualKeyCode},
     prelude::*,
-    renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
+    renderer::{Camera},
     window::ScreenDimensions,
-    ecs::{Component, DenseVecStorage},
     assets::{AssetStorage, Loader, Handle},
+    renderer::{ImageFormat, SpriteSheet, SpriteSheetFormat, Texture},
 };
-use rand::Rng;
-
+use crate::components;
+use crate::resources::SpawnCounter;
 use log::info;
 
 /// A dummy game state that shows 3 sprites.
 pub struct LifeSim;
 
 impl SimpleState for LifeSim {
-   
     fn on_start(&mut self, data: StateData<'_, GameData<'_, '_>>) {
         let world = data.world;
 
@@ -26,8 +25,14 @@ impl SimpleState for LifeSim {
 
         let sprite_sheet_handle = load_sprite_sheet(world);
 
-        world.register::<Creature>();
-        initialise_creatures(world, sprite_sheet_handle);
+        let spawn_counter = SpawnCounter {
+            cells: 100,
+            food: 10,
+        };
+        world.insert(spawn_counter);
+
+        world.register::<components::CreatureTag>();
+        components::initialise_creatures(world, sprite_sheet_handle);
         // Place the camera
         init_camera(world, &dimensions);
     }
@@ -72,46 +77,7 @@ fn init_camera(world: &mut World, dimensions: &ScreenDimensions) {
         .build();
 }
 
-pub struct Creature {
-    pub width: f32,
-    pub height: f32,
-} 
-
-impl Creature {
-    fn new(width: f32, height: f32) -> Creature {
-        Creature {
-            width,
-            height,
-        }
-    }
-}
-
-impl Component for Creature {
-    type Storage = DenseVecStorage<Self>;
-}
-
-fn initialise_creatures(world: &mut World, sprite_sheet_handle: Handle<SpriteSheet>) {
-    let mut rng = rand::thread_rng();
-    let sprite_render = SpriteRender::new(sprite_sheet_handle, 0);
-
-    for _ in 0..5000 {
-        let mut transform = Transform::default();
-
-        let y = rng.gen_range(-1000.0..1000.0);
-        let x = rng.gen_range(-1000.0..1000.0);
-
-        transform.set_translation_xyz(x, y, 0.0);
-
-        world
-            .create_entity()
-            .with(Creature::new(20.0, 20.0))
-            .with(transform)
-            .with(sprite_render.clone())
-            .build();
-    }
-}
-
-fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
+pub fn load_sprite_sheet(world: &mut World) -> Handle<SpriteSheet> {
     let texture_handle = {
         let loader = world.read_resource::<Loader>();
         let texture_storage = world.read_resource::<AssetStorage<Texture>>();
